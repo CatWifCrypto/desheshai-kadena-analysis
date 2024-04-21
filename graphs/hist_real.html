@@ -1,0 +1,62 @@
+<html>
+<head>
+</head>
+<body>
+<script src="/js/d3.v6.js"></script>
+
+<div id="container1"></div>
+
+<script>
+
+const color = "#377eb8";
+
+const margin = {top: 10, right: 30, bottom: 30, left: 40},
+    width = 1600 - margin.left - margin.right,
+    height = 1000 - margin.top - margin.bottom;
+
+const svg = d3.select("#container1")
+  .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform",
+          `translate(${margin.left},${margin.top})`);
+
+d3.csv("/data/hist_both.csv").then( function(data) {
+
+  const x = d3.scaleLinear()
+      .domain([0,200])
+      .range([0, width]);
+  svg.append("g")
+      .attr("transform", `translate(0, ${height})`)
+      .call(d3.axisBottom(x));
+
+  const histogram = d3.histogram()
+      .value(function(d) { return +d.value; })
+      .domain(x.domain())
+      .thresholds(x.ticks(25));
+
+  const bins1 = histogram(data.filter( function(d){return d.type === "real stall"} ));
+
+  const y = d3.scaleLinear()
+      .range([height, 0]);
+      y.domain([0, d3.max(bins1, function(d) { return d.length; })]);
+
+  svg.selectAll("rect")
+      .data(bins1)
+      .join("rect")
+        .attr("x", 1)
+        .attr("transform", function(d) { return `translate(${x(d.x0)} , ${y(d.length)})`})
+        .attr("width", function(d) { return x(d.x1) - x(d.x0) -1 ; })
+        .attr("height", function(d) { return height - y(d.length); })
+        .style("fill", color)
+        .style("opacity", 0.6)
+
+  svg.append("circle").attr("cx",300).attr("cy",30).attr("r", 6).style("fill", color)
+  svg.append("text").attr("x", 320).attr("y", 30).text("Real Kadena Stall Histogram").style("font-size", "15px").attr("alignment-baseline","middle")
+
+});
+
+</script>
+</body>
+</html>
