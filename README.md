@@ -338,5 +338,90 @@ We have analyzed the question in multiple ways: the simple and obvious way as
 well as with DesheShai's more complex simulation approach. Both approaches
 properly applied show that Kadena scales exactly as advertised.
 
+# Update
+
+As is so often the case, DesheShai's mistake comes down to not having precisely
+defined terminology. Instead of using terms like "block time" and "stall time",
+let's be more explicit. Here is a timeline of the relevant block actions in
+Kadena's network:
+
+1. Time T1: height H on chain C is mined
+
+...time passes (call this "period A" which is `T2-T1` seconds long)
+
+2. Time T2: All blocks at height H on C's neighbor chains are mined and mining
+   can start on the new block H+1 on chain C. Sometimes this is the same time as
+   T1 because all of the neighbor chains were already mined.
+
+...time passes (call this "period B" which is `T3-T2` seconds long)
+
+3. Time T3: height H+1 on chain C is mined
+
+DesheShai's analysis was operating under the assumption that the time duration
+T3-T2 has an Exp(30) distribution (it's an exponential distribution with
+mean 30). He straight-up says it
+[here](https://twitter.com/DesheShai/status/1782140973436318076).
+
+![Exp(30) claim](images/exp-30.png)
+
+He probably assumed this because the time between consecutive blocks in Bitcoin
+is exponentially distributed with a mean of ~10 minutes
+([source](https://bitcoin.stackexchange.com/questions/25293/probablity-distribution-of-mining)).
+However, he provided no proof that this assumption was valid for Kadena and did
+not check whether that assumption is confirmed by the actual blockchain data.
+
+In fact, Kadena anticipated exactly the issue that DesheShai thought was there
+and had already accounted for it. In my [section 2
+above](#2-are-kadenas-block-times-actually-30-seconds) I conclusively showed
+that `T3-T1` very consistently averages out to 30 seconds using very simple
+calculations from Kadena's publicly available blockchain data. If the average
+time difference between T3 and T1 is 30 seconds, then it stands to reason that
+because `T2-T1` is usually greater than 0 the average of `T3-T2` will have an
+average that is less than 30 seconds, and I have already showed exactly that.
+All of my above histograms were plotting `T3-T2` and clearly show that. They
+plotted `T3-T2` for DesheShai's simulation and for Kadena's real blockchain
+data.
+
+I was focusing above on the nature of `T3-T2`, but let's now take a look at
+`T3-T1`, the whole block time.
+
+I have added an additional data file to this repo
+[data/t3-t1.csv](data/t3-t1.csv). It contains all the values of `T3-T1` for all
+the block data in `data/block-times-2023-01.csv`. (For more information about how
+you can reconstruct or verify this data, see
+[verification.md](verification.md).)
+
+If DesheShai is right, the average of these values should be significantly
+greater than 30. We can calculate this with a very easy query:
+
+```
+$ duckdb -c "SELECT mean(t3_minus_t1) FROM 'data/t3-t1.csv'"
+┌───────────────────┐
+│ mean(t3_minus_t1) │
+│      double       │
+├───────────────────┤
+│ 30.00781449994891 │
+└───────────────────┘
+```
+
+This confirms it. The mean of `T3-T2` is not 30 seconds like DesheShai claims.
+The mean of `T3-T1` is. What's the mean of `T3-T2`? We can look at that too:
+
+```
+$ duckdb -c "SELECT mean(period_B) FROM 'data/block-lifetimes.csv'"
+┌───────────────────┐
+│  mean(period_B)   │
+│      double       │
+├───────────────────┤
+│ 16.13772480833479 │
+└───────────────────┘
+```
+
+DesheShai, you've clearly lost this one. `T3-T2` is not exponentially
+distributed with a mean of 30. Be an honorable man, admit it, and pay what you
+said you would. Either that or provide a verifiable data file like I have done
+that has real Kadena blockchain data containing block heights, chain ids,
+timestamps, and deltas that proves me wrong.
+
 [1] [Link to original analysis](https://twitter.com/DesheShai/status/1756017460149445046?s=20)
 

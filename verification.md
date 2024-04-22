@@ -137,3 +137,34 @@ The following commands will regenerate `hist_both.csv`:
 head -n 460001 stalls-real.csv > hist_both.csv
 cat stalls-bad-random.csv >> hist_both.csv
 ```
+
+# Update
+
+## data/block-lifetimes.csv.gz
+
+This file builds on `data/block-times-2023-01.csv.gz` by changing a few field
+names and adding three new fields. The `creationtime` field is renamed to `t3`
+to match the terminology used in the [Update section of the
+README](README.md#update). The `minable_time` field becomes `t2` and `delta`
+becomes `period_B`. Three additional fields `t1`, `period_A`, and `t3_minus_t1`
+are added corresponding to the times and time differences described in the
+update. You can construct this file from the existing
+`data/block-times-2023-01.csv` with the following two commands:
+
+```
+duckdb -c "COPY (SELECT height, chainid, (LAG(creationtime,1) OVER (PARTITION BY chainid ORDER BY height ASC)) as t1, minable_time as t2, creationtime as t3, delta as period_B FROM 'data/block-times-2023-01.csv' ORDER BY creationtime ASC) TO 'new-data-1.csv' WITH (HEADER true, DELIMITER ',')"
+```
+
+```
+duckdb -c "COPY (SELECT height, chainid, t1, epoch(t2 - t1) as period_A, t2, period_B, t3, epoch(t3 - t1) as t3_minus_t1 FROM 'new-data-1.csv' ORDER BY t3 ASC) TO 'block-lifetimes.csv' WITH (HEADER true, DELIMITER ',')"
+```
+
+## data/t3-t1.csv
+
+This file simply extracts the `t3_minus_t1` column from `block-lifetimes.csv`.
+It can be created with this command:
+
+```
+duckdb -c "COPY (SELECT t3_minus_t1 FROM 'data/block-lifetimes.csv' WHERE t3_minus_t1 IS NOT NULL) TO 't3-t1.csv' WITH (HEADER true, DELIMITER ',')"
+```
+
