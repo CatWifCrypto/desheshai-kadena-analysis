@@ -376,7 +376,7 @@ above](#2-are-kadenas-block-times-actually-30-seconds) I conclusively showed
 that `T3-T1` very consistently averages out to 30 seconds using very simple
 calculations from Kadena's publicly available blockchain data. If the average
 time difference between T3 and T1 is 30 seconds, then it stands to reason that
-because `T2-T1` is usually greater than 0 the average of `T3-T2` will have an
+because `T2-T1` is usually greater than 0, `T3-T2` will have an
 average that is less than 30 seconds, and I have already showed exactly that.
 All of my above histograms were plotting `T3-T2` and clearly show that. They
 plotted `T3-T2` for DesheShai's simulation and for Kadena's real blockchain
